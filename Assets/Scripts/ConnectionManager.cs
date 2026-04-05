@@ -13,8 +13,10 @@ public class ConnectionManager : MonoBehaviour
     [Header("Elementos de la Interfaz (UI)")]
     public TMP_InputField inputUsername; // Cuadro para escribir el usuario
     public TMP_InputField inputPassword; // Cuadro para escribir la contraseña
+    public TMP_InputField inputNuevaPassword; // Cuadro para escribir la nueva contraseña
     public Button botonLogin;            // Botón para iniciar sesión
     public Button botonRegistro;         // Botón para registrarse
+    public Button botonRecuperar;        // Botón para recuperar contraseña
     public TextMeshProUGUI textoMensaje; // Texto que mostrará el resultado al usuario
 
     // Estructura para enviar el JSON a Node.js
@@ -23,7 +25,14 @@ public class ConnectionManager : MonoBehaviour
     {
         public string username;
         public string password;
-        public string rutas;
+       
+    }
+
+    [System.Serializable]
+    public class DatosRecuperacion
+    {
+        public string username;
+        public string newPassword;
     }
 
     // Estructura para leer el JSON que nos devuelve Node.js
@@ -45,9 +54,15 @@ public class ConnectionManager : MonoBehaviour
         {
             botonLogin.onClick.AddListener(IntentarLogin);
         }
+        if (botonRegistro != null){
+            botonRegistro.onClick.AddListener(IntentarRegistro);
+        }
+        if (botonRecuperar != null){
+            botonRecuperar.onClick.AddListener(RecuperarPassword);
+        }
     }
 
-    // Esta función se ejecuta al pulsar el botón
+    // Función para intentar logearse, pero antes hay que procesar los datos
     public void IntentarLogin()
     {
         // Leemos lo que el usuario ha escrito en los cuadros
@@ -67,10 +82,28 @@ public class ConnectionManager : MonoBehaviour
         textoMensaje.color = Color.white;
 
         // Iniciamos la conexión con Node.js
-        StartCoroutine(HacerLogin("/inicioSesion", user, pass));
+        StartCoroutine(EnviarPeticion("/inicioSesion", user, pass));
     }
 
-    // NUEVO: Función para el botón de Registro
+    // Función para recuperar contraseña
+    public void RecuperarPassword()
+    {
+        string user = inputUsername.text;
+        string newPass = inputNuevaPassword.text;
+
+        if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(newPass))
+        {
+            textoMensaje.text = "Introduce tu usuario y nueva contraseña.";
+            textoMensaje.color = Color.yellow;
+            return;
+        }
+
+        textoMensaje.text = "Actualizando contraseña...";
+            textoMensaje.color = Color.white;
+        StartCoroutine(EnviarRecuperacion("/recuperarPassword", user, newPass));
+    }
+
+    // Función para el botón de Registro
     public void IntentarRegistro()
     {
         string user = inputUsername.text;
@@ -85,15 +118,15 @@ public class ConnectionManager : MonoBehaviour
 
         textoMensaje.text = "Registrando usuario...";
         textoMensaje.color = Color.white;
-        StartCoroutine(HacerLogin("/registro", user, pass));
+        StartCoroutine(EnviarPeticion("/registro", user, pass));
     }
-
-    IEnumerator HacerLogin(string ruta, string user, string pass)
+    // Envia los datos para la petición de login/registro
+    IEnumerator EnviarPeticion(string ruta, string user, string pass)
     {
-        DatosLogin datos = new DatosLogin { rutas = ruta, username = user, password = pass };
+        DatosLogin datos = new DatosLogin { username = user, password = pass };
         string jsonData = JsonUtility.ToJson(datos);
 
-        using (UnityWebRequest request = new UnityWebRequest(baseUrl + "/inicioSesion", "POST"))
+        using (UnityWebRequest request = new UnityWebRequest(baseUrl + ruta, "POST"))
         {
             byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
@@ -140,6 +173,30 @@ public class ConnectionManager : MonoBehaviour
                     SceneManager.LoadScene("Home");
                 }
             }
+        }
+    }
+    //  ESTO REVISAR
+
+    // Envia los datos de petición para la recuperación 
+    IEnumerator EnviarRecuperacion(string ruta, string user, string newPass)
+    {
+        DatosRecuperacion datos = new DatosRecuperacion
+        {
+            username = user,
+            newPassword = newPass
+        };
+
+        string json = JsonUtility.ToJson(datos);
+
+        using (UnityWebRequest request = new UnityWebRequest(baseUrl + ruta, "POST"))
+        {
+            byte[] body = Encoding.UTF8.GetBytes(json);
+
+            request.uploadHandler = new UploadHandlerRaw(body);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
         }
     }
 }
