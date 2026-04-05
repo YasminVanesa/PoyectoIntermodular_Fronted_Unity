@@ -766,7 +766,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 257373232}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1912675057}
+        m_TargetAssemblyTypeName: ConnectionManager, Assembly-CSharp
+        m_MethodName: IntentarRegistro
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &257373232
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1878,9 +1890,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1912675055}
-        m_TargetAssemblyTypeName: CanvasManager, Assembly-CSharp
-        m_MethodName: SceneHome
+      - m_Target: {fileID: 1912675057}
+        m_TargetAssemblyTypeName: ConnectionManager, Assembly-CSharp
+        m_MethodName: EditarPassword
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4404,7 +4416,7 @@ MonoBehaviour:
   inputNuevaPassword: {fileID: 0}
   botonLogin: {fileID: 59359154}
   botonRegistro: {fileID: 257373231}
-  botonEditarPassword: {fileID: 0}
+  botonEditarPassword: {fileID: 606712393}
   botonHorarios: {fileID: 0}
   botonNomina: {fileID: 0}
   textoMensaje: {fileID: 362238704}
