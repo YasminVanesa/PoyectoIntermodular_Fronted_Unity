@@ -23,6 +23,7 @@ public class ConnectionManager : MonoBehaviour
     {
         public string username;
         public string password;
+        public string rutas;
     }
 
     // Estructura para leer el JSON que nos devuelve Node.js
@@ -66,7 +67,7 @@ public class ConnectionManager : MonoBehaviour
         textoMensaje.color = Color.white;
 
         // Iniciamos la conexión con Node.js
-        StartCoroutine(HacerLogin(user, pass));
+        StartCoroutine(HacerLogin("/inicioSesion", user, pass));
     }
 
     // NUEVO: Función para el botón de Registro
@@ -87,9 +88,9 @@ public class ConnectionManager : MonoBehaviour
         StartCoroutine(HacerLogin("/registro", user, pass));
     }
 
-    IEnumerator HacerLogin(string user, string pass)
+    IEnumerator HacerLogin(string ruta, string user, string pass)
     {
-        DatosLogin datos = new DatosLogin { username = user, password = pass };
+        DatosLogin datos = new DatosLogin { rutas = ruta, username = user, password = pass };
         string jsonData = JsonUtility.ToJson(datos);
 
         using (UnityWebRequest request = new UnityWebRequest(baseUrl + "/inicioSesion", "POST"))
