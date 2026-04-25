@@ -22,6 +22,10 @@ public class ConnectionManager : MonoBehaviour
     [Header("UI - Funciones Laborales")]
     public Button botonHorarios; 
     public Button botonNomina; 
+    
+    [Header("UI - Base de Datos MySQL")]
+    public Button botonConsultarUsuarios; 
+
     public TextMeshProUGUI textoMensaje;
 
     [System.Serializable]
@@ -30,7 +34,6 @@ public class ConnectionManager : MonoBehaviour
     [System.Serializable]
     public class DatosEdicion { public string username; public string oldPassword; public string newPassword; }
 
-    
     [System.Serializable]
     public class RespuestaServidor { 
         public bool success; 
@@ -47,15 +50,21 @@ public class ConnectionManager : MonoBehaviour
         if (botonEditarPassword != null) botonEditarPassword.onClick.AddListener(EditarPassword);
         if (botonHorarios != null) botonHorarios.onClick.AddListener(ConsultarHorarios);
         if (botonNomina != null) botonNomina.onClick.AddListener(ConsultarNomina);
+        
+        if (botonConsultarUsuarios != null) botonConsultarUsuarios.onClick.AddListener(ConsultarBD);
     }
 
-    public void IntentarLogin() => StartCoroutine(EnviarLogin("/inicioSesion", inputUsername.text, inputPassword.text, true));
-    public void IntentarRegistro() => StartCoroutine(EnviarLogin("/registro", inputUsername.text, inputPassword.text, false));
+    // CAMBIO: Ahora apunta a la ruta de la base de datos real
+    public void IntentarLogin() => StartCoroutine(EnviarLogin("/api/MySQL/loginReal", inputUsername.text, inputPassword.text, true));
+    
+    public void IntentarRegistro() => StartCoroutine(EnviarLogin("/api/MySQL/registro", inputUsername.text, inputPassword.text, false));
+    
     public void EditarPassword() => StartCoroutine(EnviarEdicion("/editarPassword", inputUsername.text, inputOldPassword.text, inputNuevaPassword.text));
 
-    
     public void ConsultarHorarios() => StartCoroutine(PostRequest("/datosHorarios", "{}", false));
     public void ConsultarNomina() => StartCoroutine(PostRequest("/datosNomina", "{}", false));
+   
+    public void ConsultarBD() => StartCoroutine(GetRequest("/api/MySQL/usuarios"));
 
     IEnumerator EnviarLogin(string ruta, string user, string pass, bool esLogin)
     {
@@ -70,6 +79,24 @@ public class ConnectionManager : MonoBehaviour
     {
         string json = JsonUtility.ToJson(new DatosEdicion { username = user, oldPassword = oldPass, newPassword = newPass });
         yield return PostRequest(ruta, json, false);
+    }
+
+    IEnumerator GetRequest(string ruta)
+    {
+        using (UnityWebRequest request = UnityWebRequest.Get(baseUrl + ruta))
+        {
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError)
+            {
+                MostrarMensaje("Error: No se pudo conectar a la BD", Color.red);
+            }
+            else
+            {
+                Debug.Log("Datos recibidos de la BBDD: " + request.downloadHandler.text);
+                MostrarMensaje("Consulta GET Exitosa (Ver Consola)", Color.cyan);
+            }
+        }
     }
 
     IEnumerator PostRequest(string ruta, string json, bool cargarEscena)
@@ -98,7 +125,6 @@ public class ConnectionManager : MonoBehaviour
     {
         try 
         {
-            // Extraemos el texto JSON
             string jsonResponse = request.downloadHandler.text;
             Debug.Log("Respuesta del servidor: " + jsonResponse);
 
@@ -110,7 +136,7 @@ public class ConnectionManager : MonoBehaviour
             else if (!string.IsNullOrEmpty(resp.Title)) mensajeAMostrar = resp.Title;
             else mensajeAMostrar = "Acción realizada";
 
-            if (request.responseCode == 200) {
+            if (request.responseCode == 200 || request.responseCode == 201) { // 201 es "Created" en POST
                 MostrarMensaje(mensajeAMostrar, Color.green);
                 if (cargarEscena && resp.success) StartCoroutine(CambiarEscena());
             } else {
